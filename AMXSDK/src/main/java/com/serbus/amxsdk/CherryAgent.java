@@ -123,10 +123,45 @@ public class CherryAgent {
 
 
 
-        Map<String,String> headerMap = new HashMap<String,String>();
+        HashMap<String,String> headerMap = new HashMap<String,String>();
         headerMap.put("consumerKey",getStringSharePrefs(context,"consumerKey"));
 
-        new HTTPRequest().makeCall(context,domain+"/api/v1/client/heartbeat", new JSONObject(req_data),headerMap, new HTTPCallback() {
+        HTTPRequest requestHttp = new HTTPRequest(domain+"/api/v1/client/heartbeat", new JSONObject(req_data).toString(),headerMap, new HTTPCallback() {
+            @Override
+            public void processFinish(String response) {
+                Log.e("Response",response);
+
+                try {
+                    JSONObject responseObject = new JSONObject(response);
+                    JSONArray resultArray = responseObject.getJSONArray("results");
+                    JSONObject resultObject = resultArray.getJSONObject(0);
+                    String clientId = resultObject.optString("clientId");
+                    setStringSharePrefs(context,"clientId",clientId);
+                    JSONObject uuIdObject = resultObject.getJSONObject("uuId");
+                    String uuidValue = uuIdObject.optString("value");
+                    int uuidVersion = uuIdObject.optInt("version");
+                    int uuidUpdatedStamp = uuIdObject.optInt("updatedStamp");
+                    String signature = resultObject.getString("signature");
+                    setStringSharePrefs(context,"uuid_value",uuidValue);
+                    setIntSharePrefs(context,"uuid_version",uuidVersion);
+                    setIntSharePrefs(context,"uuid_updatedStamp",uuidUpdatedStamp);
+                    setStringSharePrefs(context,"signature",signature);
+
+                    if(topicListener != null){
+                        topicListener.onTopicReceived("topic_"+s_consumerKey);
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+            @Override
+            public void processFailed(int responseCode, String output) {
+                Log.e("Response Failed", Integer.toString(responseCode) + " - " + output);
+            }
+        });
+        requestHttp.execute();
+
+        /*new HTTPRequest().makeCall(context,domain+"/api/v1/client/heartbeat", new JSONObject(req_data),headerMap, new HTTPCallback() {
             @Override
             public void processFinish(String response) {
                 Log.e("Response",response);
@@ -159,7 +194,7 @@ public class CherryAgent {
             public void processFailed(String error) {
                 Log.e("Response Failed", error);
             }
-        });
+        });*/
     }
 
 
@@ -173,7 +208,7 @@ public class CherryAgent {
         req_data.put("eventName",event.eventName);
         req_data.put("eventData",eventData);
 
-        Map<String,String> headerMap = new HashMap<String,String>();
+        HashMap<String,String> headerMap = new HashMap<String,String>();
         if(!getStringSharePrefs(context,"clientId").equals("")){
             headerMap.put("clientId",getStringSharePrefs(context,"clientId"));
         }
@@ -182,16 +217,28 @@ public class CherryAgent {
         if(!getStringSharePrefs(context,"domain").equals("")){
             domain = getStringSharePrefs(context,"domain");
         }
-        new HTTPRequest().makeCall(context,domain+"/api/v1/client/track/event", new JSONObject(req_data),headerMap, new HTTPCallback() {
+
+        HTTPRequest requestHttp = new HTTPRequest(domain+"/api/v1/client/track/event", new JSONObject(req_data).toString(),headerMap, new HTTPCallback() {
             @Override
             public void processFinish(String response) {
                 Log.e("Response",response);
             }
             @Override
-            public void processFailed(String error) {
-                Log.e("Response Failed", error);
+            public void processFailed(int responseCode, String output) {
+                Log.e("Response Failed", Integer.toString(responseCode) + " - " + output);
             }
         });
+        requestHttp.execute();
+//        new HTTPRequest().makeCall(context,domain+"/api/v1/client/track/event", new JSONObject(req_data),headerMap, new HTTPCallback() {
+//            @Override
+//            public void processFinish(String response) {
+//                Log.e("Response",response);
+//            }
+//            @Override
+//            public void processFailed(String error) {
+//                Log.e("Response Failed", error);
+//            }
+//        });
     }
 
     static private void setStringSharePrefs(Context context,String name, String value){

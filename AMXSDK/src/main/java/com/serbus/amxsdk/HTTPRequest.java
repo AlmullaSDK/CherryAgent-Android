@@ -4,20 +4,6 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.android.volley.AuthFailureError;
-import com.android.volley.NetworkResponse;
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.VolleyLog;
-import com.android.volley.toolbox.HttpHeaderParser;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
@@ -32,64 +18,87 @@ import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class HTTPRequest {
-
-    public HTTPRequest() {
+public class HTTPRequest extends AsyncTask<String, Void, String>{
+    public String requestURL="";
+    public String postDataParams;
+    public HashMap<String, String> headers;
+    public HTTPCallback delegate = null;//Call back interface
+    public int res_code=0;
+    String charset = "UTF-8";
+    public HTTPRequest(String requestURL, String postDataParams,HashMap<String, String> headers,HTTPCallback asyncResponse){
+        this.delegate = asyncResponse;//Assigning call back interfacethrough constructor
+        this.postDataParams=postDataParams;
+        this.headers = headers;
+        this.requestURL=requestURL;
     }
-
-    public void makeCall(Context context, String url, JSONObject jsonBody, final Map<String,String> headers, final HTTPCallback httpCallback){
-        RequestQueue requestQueue = Volley.newRequestQueue(context);
-        String URL = url;
-        final String requestBody = jsonBody.toString();
-
-        Log.e("REQUESTBODY",requestBody);
-
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                Log.i("VOLLEY", response);
-                httpCallback.processFinish(response);
+    @Override
+    protected String doInBackground(String... params) {
+        return performPostCall(requestURL,postDataParams);
+    }
+    @Override
+    protected void onPostExecute(String result) {
+        //super.onPostExecute(result);
+        if(res_code==HttpURLConnection.HTTP_OK){
+            delegate.processFinish(result);
+        }else{
+            delegate.processFailed(res_code, result);
+        }
+    }
+    public String  performPostCall(String requestURL,
+                                   String postDataParams) {
+        Log.e("HTTP Request URL",requestURL);
+        URL url;
+        String response = "";
+        try {
+            url = new URL(requestURL);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setReadTimeout(30000);
+            conn.setConnectTimeout(60000);
+            conn.setRequestMethod("POST");
+            conn.setDoInput(true);
+            conn.setDoOutput(true);
+            headers.put("Content-Type", "application/json");
+            for (String headerKey : headers.keySet()) {
+                conn.setRequestProperty(headerKey, headers.get(headerKey));
             }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("VOLLEY", error.toString());
-                httpCallback.processFailed(error.toString());
-            }
-        }) {
-            @Override
-            public String getBodyContentType() {
-                return "application/json; charset=utf-8";
-            }
-
-            @Override
-            public byte[] getBody() throws AuthFailureError {
-                try {
-                    return requestBody == null ? null : requestBody.getBytes("utf-8");
-                } catch (UnsupportedEncodingException uee) {
-                    VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", requestBody, "utf-8");
-                    return null;
+            OutputStream os = conn.getOutputStream();
+//            BufferedWriter writer = new BufferedWriter(
+//                    new OutputStreamWriter(os, "UTF-8"));
+////            writer.write(getPostDataString(postDataParams));
+//            byte[] input = postDataParams.getBytes("utf-8");
+//            os.write(input, 0, input.length);
+//            writer.flush();
+//            writer.close();
+//            os.close();
+            byte[] input = postDataParams.getBytes(charset);
+            os.write(input, 0, input.length);
+            int responseCode=conn.getResponseCode();
+            Log.e("HTTP Response Code", Integer.toString(responseCode));
+            res_code=responseCode;
+//            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getErrorStream(), "UTF-8"));
+//            String f = in.readLine();
+//            Log.e("RESPONSE",f);
+            if (responseCode == HttpsURLConnection.HTTP_OK) {
+                String line;
+                BufferedReader br=new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                while ((line=br.readLine()) != null) {
+                    response+=line;
+                }
+            }else if (responseCode == 500) {
+                String line;
+                BufferedReader br=new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                while ((line=br.readLine()) != null) {
+                    response+=line;
                 }
             }
-
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String>  params = new HashMap<String, String>();
-                params.put("Content-Type", "application/json");
-                params.putAll(headers);
-                return params;
+            else {
+                response="";
             }
-
-            @Override
-            protected Response<String> parseNetworkResponse(NetworkResponse response) {
-                //TODO if you want to use the status code for any other purpose like to handle 401, 403, 404
-                String statusCode = String.valueOf(response.statusCode);
-                //Handling logic
-                return super.parseNetworkResponse(response);
-            }
-        };
-
-        requestQueue.add(stringRequest);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Log.e("RESPONSE FINAL", response);
+        return response;
     }
 }
 
