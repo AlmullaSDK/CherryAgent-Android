@@ -5,8 +5,6 @@ import android.app.Application;
 import android.os.Bundle;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.serbus.amxsdk.TopicListener;
 import com.serbus.amxsdk.CherryAgent;
@@ -26,37 +24,37 @@ public class AppController extends Application implements TopicListener,Applicat
 
 
     @Override
-    public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+    public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
 
     }
 
     @Override
-    public void onActivityStarted(@NonNull Activity activity) {
+    public void onActivityStarted(Activity activity) {
 
     }
 
     @Override
-    public void onActivityResumed(@NonNull Activity activity) {
+    public void onActivityResumed(Activity activity) {
         new CherryAgent().initSDK(getApplicationContext(),"CONSUMER_KEY",this).setDomain("https://apib-kwt.almullaexchange.com/xms");
     }
 
     @Override
-    public void onActivityPaused(@NonNull Activity activity) {
+    public void onActivityPaused(Activity activity) {
 
     }
 
     @Override
-    public void onActivityStopped(@NonNull Activity activity) {
+    public void onActivityStopped(Activity activity) {
 
     }
 
     @Override
-    public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {
+    public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
 
     }
 
     @Override
-    public void onActivityDestroyed(@NonNull Activity activity) {
+    public void onActivityDestroyed(Activity activity) {
 
     }
 }
