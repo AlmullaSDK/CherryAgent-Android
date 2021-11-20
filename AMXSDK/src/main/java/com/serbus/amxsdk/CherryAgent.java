@@ -55,12 +55,13 @@ public class CherryAgent {
         setStringSharePrefs(context,"consumerKey",s_consumerKey);
 
 
-        makeHeartbeatCall(context);
+        
         return this;
     }
 
     public void setDomain(String domain){
         setStringSharePrefs(context,"domain",domain);
+        makeHeartbeatCall(context);
     }
 
     static public void setIdentity(Context context,String identity){
