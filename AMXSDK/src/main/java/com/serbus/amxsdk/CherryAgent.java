@@ -53,7 +53,6 @@ public class CherryAgent {
         setStringSharePrefs(context,"identity",s_identity);
         setStringSharePrefs(context,"origin",s_origin);
         setStringSharePrefs(context,"consumerKey",s_consumerKey);
-
         return this;
     }
 
@@ -95,10 +94,10 @@ public class CherryAgent {
         HashMap<String , Object> clientProperties = new HashMap<>();
         clientProperties.put("appVersion", getStringSharePrefs(context,"version"));
         clientProperties.put("osVersion", getStringSharePrefs(context,"osVersion"));
-        clientProperties.put("appType", getStringSharePrefs(context,"ANDROID"));
-        clientProperties.put("devicePlatform", getStringSharePrefs(context,"ANDROID"));
-        clientProperties.put("channel", getStringSharePrefs(context,"ANDROID"));
-        clientProperties.put("deviceType", getStringSharePrefs(context,"MOBILE"));
+        clientProperties.put("appType", "ANDROID");
+        clientProperties.put("devicePlatform", "ANDROID");
+        clientProperties.put("channel", "ANDROID");
+        clientProperties.put("deviceType", "MOBILE");
 
         req_data.put("clientFp", Settings.Secure.getString(context.getContentResolver(),
                 Settings.Secure.ANDROID_ID));
